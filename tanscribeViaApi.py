@@ -4,7 +4,7 @@ import requests
 url = 'http://127.0.0.1:8089/transcribe'  # Update with your Flask server's URL
 
 # Path to the MP3 file you want to send
-file_path = "speech/opgenomen_audio_70b6lrme.wav"  # Update with the path to your MP3 file
+file_path = "D:\Development\openAi\speech20240222081124.mp3"  # Update with the path to your MP3 file
 
 # Create a dictionary containing the file to be sent
 files = {'file': open(file_path, 'rb')}

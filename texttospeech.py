@@ -16,11 +16,18 @@ format = '%Y%m%d%H%M%S'
 string = date_time.strftime(format)
 
 
+with open('tts_tekst.txt', 'r') as file:
+    # Lees de inhoud van het bestand en sla het op in een string
+    inhoud = file.read()
+
+
+inhoud = "OK,  Ik kijk de agenda even na. Even geduld alsjeblieft."
+
 speech_file_path = 'speech' + str(string)+ ".mp3"
 response = client.audio.speech.create(
   model="tts-1",
-  voice="alloy",
-  input="Hello everyone, I am NAO, a humanoid robot, a marvel of robotics and artificial intelligence. Crafted with the precision of advanced technology, my existence bridges the gap between human imagination and reality."
+  voice="nova",
+  input=inhoud
 )
 
 

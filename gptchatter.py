@@ -85,12 +85,12 @@ messages = initial_messages.copy()
 while True:
     # Ask user for input
     # Opname starten
-    input("Druk op Enter om verder te gaan")
-
     
-    audio_file_path = record_until_silence()
 
-    #user_input = input("Your message: ")
+    user_input = input("Your message: ")
+    '''
+    input("Druk op Enter om verder te gaan")
+    audio_file_path = record_until_silence()
     with open(audio_file_path, "rb") as audio_file:
         user_input = client.audio.transcriptions.create(
         model="whisper-1", 
@@ -101,9 +101,9 @@ while True:
     # Check if the user wants to exit the chat
     user_input = user_input.text
     
-    
     #user_input = input("Your message:")
-    
+    '''
+
     if user_input.lower() == 'exit':
         print("Exiting chat...")
         break

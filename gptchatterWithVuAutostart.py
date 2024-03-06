@@ -15,7 +15,9 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import warnings
 import subprocess
+import requests
 warnings.filterwarnings("ignore")
+
 
 # Initialiseer Pygame voor audio afspelen
 pygame.mixer.init()
@@ -101,6 +103,7 @@ initial_messages = [
 # Initialize messages list with the initial system message
 messages = initial_messages.copy()
 
+
 while True:
     # Ask user for input
     # Opname starten
@@ -149,9 +152,23 @@ while True:
     # Perform the test
     for word in words_to_test:
         if word.lower() in user_input.lower():
-            messages.append({"role": "assistant", "content": "Zeg dat je het weerbericht via  een API kan ophalen en vraag naar de locatie. Eens je de locatie weet maak je een json string van de vorm  {\"actionname\"': \"weather\",\"location\": \"gevraagde\"}"})  # Corrected line
+            response = requests.get('https://www.meteo.be/nl/weer/verwachtingen/weer-voor-de-komende-dagen')
+            print (response)
+            if response.status_code == 200:
+                # De tekst van de webpagina opslaan in een variabele
+                webpagina_tekst = response.text
+                messages.append({"role": "assistant", "content": webpagina_tekst})  # Corrected line
 
-
+    words_to_test = ['laatste nieuws']
+    # Perform the test
+    for word in words_to_test:
+        if word.lower() in user_input.lower():
+            response = requests.get('https://www.standaard.be/rss/section/1f2838d4-99ea-49f0-9102-138784c7ea7c')
+            print (response)
+            if response.status_code == 200:
+                # De tekst van de webpagina opslaan in een variabele
+                webpagina_tekst = response.text
+                messages.append({"role": "assistant", "content": webpagina_tekst})  # Corrected line
 
     # Add user message to the messages list
     messages.append({"role": "user", "content": user_input})
