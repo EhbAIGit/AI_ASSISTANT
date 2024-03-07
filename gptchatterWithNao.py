@@ -33,7 +33,6 @@ MQTT_BROKER = 'broker.emqx.io'  # Use the IP address or hostname of your MQTT br
 MQTT_PORT = 1883  # Default MQTT port is 1883 (use 8883 for SSL connections)
 MQTT_TOPIC = 'NAO/SAY'
 MQTT_MESSAGE = 'Hallo, Ik ben online!'
-messageEnded = True
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
@@ -46,22 +45,9 @@ def on_publish(client, userdata, mid):
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 nao = mqtt.Client(client_id)
 
-
-def on_message(nao,userdata,message) :
-    content = str(message.payload.decode("utf-8"))
-    topic =  str(message.topic.decode("utf-8"))
-    print("message topic=",topic)
-    print("message received ", content)
-    messageEnded = True
-
-
 # Assign event callbacks
 nao.on_connect = on_connect
 nao.on_publish = on_publish
-nao.on_message = on_message
-
-
-
 
 # Connect to the MQTT broker
 nao.connect(MQTT_BROKER, MQTT_PORT, 60)
@@ -71,7 +57,7 @@ pygame.mixer.init()
 
 nao.publish(MQTT_TOPIC, MQTT_MESSAGE)
 
-chatViaMic = True
+chatViaMic = False
 speakWithNao = True
 
 # Functie om de WAV af te spelen
@@ -250,10 +236,6 @@ while True:
     # Ask user for input
     # Opname starten
 
-    #messageEnded = False
-
-    nao.publish("NAO/DONE", "STARTED")
-
     if (firstCall != True) :
 
         if (chatViaMic == False) :
@@ -305,10 +287,7 @@ while True:
         if word.lower() in user_input.lower():
 
             start_time = time.perf_counter()  # Precieze starttijd
-            if (speakWithNao == False) :
-                subprocess.Popen(['python', 'playmp3.py', 'waiting\weeropzoeken.mp3'])
-            else :
-                nao.publish(MQTT_TOPIC, "Ok, ik kijk even op de KMI website. Even geduld.")
+            subprocess.Popen(['python', 'playmp3.py', 'waiting\weeropzoeken.mp3'])
             toWait = 5
 
             response = requests.get('https://www.meteo.be/nl/weer/verwachtingen/weer-voor-de-komende-dagen')
@@ -326,12 +305,6 @@ while True:
     for word in words_to_test:
         if word.lower() in user_input.lower():
             start_time = time.perf_counter()  # Precieze starttijd
-
-            if (speakWithNao == False) :
-                subprocess.Popen(['python', 'playmp3.py', 'waiting\standaardopzoeken.mp3'])
-            else :
-                nao.publish(MQTT_TOPIC, "Ok, ik kijk even op de standaard website en lees de hoogtepunten. Even geduld.")
-
             subprocess.Popen(['python', 'playmp3.py', 'waiting\standaardopzoeken.mp3'])
             toWait = 7
             response = requests.get('https://www.standaard.be/rss/section/1f2838d4-99ea-49f0-9102-138784c7ea7c')
@@ -345,10 +318,7 @@ while True:
     for word in words_to_test:
         if word.lower() in user_input.lower():
             start_time = time.perf_counter()  # Precieze starttijd
-            if (speakWithNao == False) :
-                subprocess.Popen(['python', 'playmp3.py', 'waiting\/agenda.mp3'])
-            else :
-                nao.publish(MQTT_TOPIC, "Ok, ik kijk even in de agenda.")
+            subprocess.Popen(['python', 'playmp3.py', 'waiting\/agenda.mp3'])
             toWait = 7
             response = getPublicAgenda('https://calendar.google.com/calendar/ical/maarten.dequanter%40gmail.com/private-011d782da2fa4134d76a95411500c373/basic.ics')
             messages.append({"role": "assistant", "content": response})  # Corrected line
