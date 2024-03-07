@@ -23,12 +23,42 @@ import re
 from icalendar import Calendar
 import json
 warnings.filterwarnings("ignore")
+import random
+
+import paho.mqtt.client as mqtt
+
+
+# Define the MQTT server details
+MQTT_BROKER = 'broker.emqx.io'  # Use the IP address or hostname of your MQTT broker
+MQTT_PORT = 1883  # Default MQTT port is 1883 (use 8883 for SSL connections)
+MQTT_TOPIC = 'NAO/SAY'
+MQTT_MESSAGE = 'Hallo, Ik ben online!'
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+    # Once connected, publish your message
+    client.publish(MQTT_TOPIC, MQTT_MESSAGE)
+
+def on_publish(client, userdata, mid):
+    print("Message Published.")
+
+client_id = f'python-mqtt-{random.randint(0, 1000)}'
+nao = mqtt.Client(client_id)
+
+# Assign event callbacks
+nao.on_connect = on_connect
+nao.on_publish = on_publish
+
+# Connect to the MQTT broker
+nao.connect(MQTT_BROKER, MQTT_PORT, 60)
 
 # Initialiseer Pygame voor audio afspelen
 pygame.mixer.init()
 
+nao.publish(MQTT_TOPIC, MQTT_MESSAGE)
 
-chatViaMic = True
+chatViaMic = False
+speakWithNao = True
 
 # Functie om de WAV af te spelen
 def play_audio(file_path):
@@ -326,91 +356,94 @@ while True:
     start_time = time.perf_counter()  # Precieze starttijd
     # Plaats hier de code waarvan je de uitvoeringstijd wilt meten
 
+    if (speakWithNao == False) :
 
-    speech_file_path = 'speech' + str(string)+ ".mp3"
-    response = client.audio.speech.create(
-    model="tts-1",
-    voice="nova",
-    input=completion.choices[0].message.content
-    )
+        speech_file_path = 'speech' + str(string)+ ".mp3"
+        response = client.audio.speech.create(
+        model="tts-1",
+        voice="nova",
+        input=completion.choices[0].message.content
+        )
 
-    end_time = time.perf_counter()  # Precieze eindtijd
-    total_time = end_time - start_time
-    while (total_time < toWait) :
-        time.sleep(0.5)
         end_time = time.perf_counter()  # Precieze eindtijd
         total_time = end_time - start_time
-    
-    print(f"Totale uitvoeringstijd voor speech: {total_time} seconden.")
+        while (total_time < toWait) :
+            time.sleep(0.5)
+            end_time = time.perf_counter()  # Precieze eindtijd
+            total_time = end_time - start_time
+        
+        print(f"Totale uitvoeringstijd voor speech: {total_time} seconden.")
 
 
-    response.stream_to_file(speech_file_path)
-    end = time.time()
+        response.stream_to_file(speech_file_path)
+        end = time.time()
 
-    calc_time = end
-    #print (calc_time)
-
-
-    # Laden van het MP3-bestand
-    mp3File = speech_file_path
-    audio = AudioSegment.from_mp3(mp3File)
-    # Exporteren naar WAV
-    pygame.mixer.quit()
-    audio.export('vumeter.wav', format="wav")
-    pygame.mixer.init()
+        calc_time = end
+        #print (calc_time)
 
 
-    audio_file_path = 'vumeter.wav'  # Vervang dit door het pad naar je WAV-bestand
-    samplerate, data = wavfile.read(audio_file_path)
-    if data.ndim > 1:
-        data = np.mean(data, axis=1)  # Converteer naar mono indien nodig
+        # Laden van het MP3-bestand
+        mp3File = speech_file_path
+        audio = AudioSegment.from_mp3(mp3File)
+        # Exporteren naar WAV
+        pygame.mixer.quit()
+        audio.export('vumeter.wav', format="wav")
+        pygame.mixer.init()
 
-    # Bereken de totale afspeelduur in milliseconden
-    total_duration_ms = 1000 * len(data) / samplerate
 
-    fig, ax = plt.subplots()
-    x = np.fft.rfftfreq(chunk_size, 1/samplerate)
-    x_filtered = x[(x >= 80) & (x <= 2600)]
-    bars = ax.bar(x_filtered, np.zeros_like(x_filtered), width=np.diff(x_filtered)[0])
+        audio_file_path = 'vumeter.wav'  # Vervang dit door het pad naar je WAV-bestand
+        samplerate, data = wavfile.read(audio_file_path)
+        if data.ndim > 1:
+            data = np.mean(data, axis=1)  # Converteer naar mono indien nodig
 
-    # Creëer een colormap van groen naar rood
-    cmap = plt.get_cmap('RdYlGn_r')
-    norm = Normalize(vmin=0, vmax=1000000)
-    sm = ScalarMappable(norm=norm, cmap=cmap)
+        # Bereken de totale afspeelduur in milliseconden
+        total_duration_ms = 1000 * len(data) / samplerate
 
-    def init():
-        ax.set_xlim(80, 2600)
-        ax.set_ylim(0, 1000000)
-        return bars
+        fig, ax = plt.subplots()
+        x = np.fft.rfftfreq(chunk_size, 1/samplerate)
+        x_filtered = x[(x >= 80) & (x <= 2600)]
+        bars = ax.bar(x_filtered, np.zeros_like(x_filtered), width=np.diff(x_filtered)[0])
 
-    def update(frame):
-        current_pos_ms = pygame.mixer.music.get_pos()
-        if current_pos_ms == -1:  # Check of de muziek is gestopt
-            ani.event_source.stop()  # Stop de animatie
-            plt.close(fig)  # Sluit de plot
+        # Creëer een colormap van groen naar rood
+        cmap = plt.get_cmap('RdYlGn_r')
+        norm = Normalize(vmin=0, vmax=1000000)
+        sm = ScalarMappable(norm=norm, cmap=cmap)
+
+        def init():
+            ax.set_xlim(80, 2600)
+            ax.set_ylim(0, 1000000)
             return bars
-        current_sample_index = int(current_pos_ms * samplerate / 1000)
-        start = max(0, current_sample_index - chunk_size // 2)
-        end = min(len(data), start + chunk_size)
-        if end <= len(data):
-            fft_data = np.abs(np.fft.rfft(data[start:end]))
-            #fft_data_filtered = fft_data[(x >= 80) & (x <= 2600)]
-            for bar, height in zip(bars, fft_data):
-                bar.set_height(height)
-                bar.set_color(cmap(norm(height)))
-        return bars
 
-    # Start audio playback
-    play_audio(audio_file_path)
+        def update(frame):
+            current_pos_ms = pygame.mixer.music.get_pos()
+            if current_pos_ms == -1:  # Check of de muziek is gestopt
+                ani.event_source.stop()  # Stop de animatie
+                plt.close(fig)  # Sluit de plot
+                return bars
+            current_sample_index = int(current_pos_ms * samplerate / 1000)
+            start = max(0, current_sample_index - chunk_size // 2)
+            end = min(len(data), start + chunk_size)
+            if end <= len(data):
+                fft_data = np.abs(np.fft.rfft(data[start:end]))
+                #fft_data_filtered = fft_data[(x >= 80) & (x <= 2600)]
+                for bar, height in zip(bars, fft_data):
+                    bar.set_height(height)
+                    bar.set_color(cmap(norm(height)))
+            return bars
+
+        # Start audio playback
+        play_audio(audio_file_path)
 
 
-    # Start de animatie
-    ani = animation.FuncAnimation(fig, update, init_func=init, blit=False, interval=50)
+        # Start de animatie
+        ani = animation.FuncAnimation(fig, update, init_func=init, blit=False, interval=50)
 
-    plt.show()
-    
-    # Print the model's response
-    print("NAO:", completion.choices[0].message.content)  # Corrected line
+        plt.show()
+        
+        # Print the model's response
+        print("NAO:", completion.choices[0].message.content)  # Corrected line
+    else :
+        nao.publish(MQTT_TOPIC, completion.choices[0].message.content)
     
     # Add model's response to the messages list to maintain context
     messages.append({"role": "assistant", "content": completion.choices[0].message.content})  # Corrected line
