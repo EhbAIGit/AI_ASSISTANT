@@ -34,13 +34,24 @@ MQTT_PORT = 1883  # Default MQTT port is 1883 (use 8883 for SSL connections)
 MQTT_TOPIC = 'NAO/SAY'
 MQTT_MESSAGE = 'Hallo, Ik ben online!'
 
+messageEnded = True
+
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     # Once connected, publish your message
-    client.publish(MQTT_TOPIC, MQTT_MESSAGE)
+    #client.publish(MQTT_TOPIC, MQTT_MESSAGE)
 
 def on_publish(client, userdata, mid):
     print("Message Published.")
+
+
+def on_message(client, userdata, msg):
+    print("Message Received  "+msg.topic+":"+str(msg.payload))
+    naofile = open("nao.txt",'w')
+    naofile.write("DONE")
+    naofile.close()
+    return True
+
 
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 nao = mqtt.Client(client_id)
@@ -48,6 +59,7 @@ nao = mqtt.Client(client_id)
 # Assign event callbacks
 nao.on_connect = on_connect
 nao.on_publish = on_publish
+nao.on_message = on_message
 
 # Connect to the MQTT broker
 nao.connect(MQTT_BROKER, MQTT_PORT, 60)
@@ -55,9 +67,11 @@ nao.connect(MQTT_BROKER, MQTT_PORT, 60)
 # Initialiseer Pygame voor audio afspelen
 pygame.mixer.init()
 
-nao.publish(MQTT_TOPIC, MQTT_MESSAGE)
+#nao.publish(MQTT_TOPIC, MQTT_MESSAGE)
 
-chatViaMic = False
+nao.subscribe('NAO/DONE')
+
+chatViaMic = True
 speakWithNao = True
 
 # Functie om de WAV af te spelen
@@ -287,7 +301,10 @@ while True:
         if word.lower() in user_input.lower():
 
             start_time = time.perf_counter()  # Precieze starttijd
-            subprocess.Popen(['python', 'playmp3.py', 'waiting\weeropzoeken.mp3'])
+            if (speakWithNao == False) :
+                subprocess.Popen(['python', 'playmp3.py', 'waiting\weeropzoeken.mp3'])
+            
+            nao.publish(MQTT_TOPIC, "OK, Ik zoek het weerbericht even op voor je. Even geduld.")
             toWait = 5
 
             response = requests.get('https://www.meteo.be/nl/weer/verwachtingen/weer-voor-de-komende-dagen')
@@ -305,8 +322,10 @@ while True:
     for word in words_to_test:
         if word.lower() in user_input.lower():
             start_time = time.perf_counter()  # Precieze starttijd
-            subprocess.Popen(['python', 'playmp3.py', 'waiting\standaardopzoeken.mp3'])
-            toWait = 7
+            if (speakWithNao == False) :
+                subprocess.Popen(['python', 'playmp3.py', 'waiting\standaardopzoeken.mp3'])
+                toWait = 7
+            nao.publish(MQTT_TOPIC, "OK, Ik raadpleeg het nieuws even voor jou op de standaard. Even geduld.")
             response = requests.get('https://www.standaard.be/rss/section/1f2838d4-99ea-49f0-9102-138784c7ea7c')
             inhoud = getNewsContent (response.text)
             if response.status_code == 200:
@@ -318,8 +337,10 @@ while True:
     for word in words_to_test:
         if word.lower() in user_input.lower():
             start_time = time.perf_counter()  # Precieze starttijd
-            subprocess.Popen(['python', 'playmp3.py', 'waiting\/agenda.mp3'])
-            toWait = 7
+            if (speakWithNao == False) :
+                subprocess.Popen(['python', 'playmp3.py', 'waiting\/agenda.mp3'])
+                toWait = 7
+            nao.publish(MQTT_TOPIC, "OK, Ik raadpleeg even de agenda. Even geduld.")
             response = getPublicAgenda('https://calendar.google.com/calendar/ical/maarten.dequanter%40gmail.com/private-011d782da2fa4134d76a95411500c373/basic.ics')
             messages.append({"role": "assistant", "content": response})  # Corrected line
 
@@ -443,15 +464,24 @@ while True:
         # Print the model's response
         print("NAO:", completion.choices[0].message.content)  # Corrected line
     else :
+        naofile = open("nao.txt",'w')
+        naofile.write("TALKING")
+        naofile.close()
         nao.publish(MQTT_TOPIC, completion.choices[0].message.content)
     
     # Add model's response to the messages list to maintain context
     messages.append({"role": "assistant", "content": completion.choices[0].message.content})  # Corrected line
 
-    while (messageEnded != True):
-        nao.loop_start() #start the loop
-        time.sleep(1000)
-        print ("looking for mqtt end")
-        client.loop_stop() #stop the loop
+
+    nao.loop_start() #start the loop
+    
+    for i in range(30) :
+        naofile = open("nao.txt",'r')
+        naocontent = naofile.read()
+        time.sleep(1)
+        if (naocontent == "DONE" ) :
+            print ("Nao Finished Talking")
+            break
+    nao.loop_stop() #stop the loop
 
 
