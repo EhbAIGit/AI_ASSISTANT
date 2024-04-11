@@ -72,7 +72,7 @@ pygame.mixer.init()
 nao.subscribe('NAO/DONE')
 
 chatViaMic = True
-speakWithNao = True
+speakWithNao = False
 
 # Functie om de WAV af te spelen
 def play_audio(file_path):
@@ -475,13 +475,15 @@ while True:
 
     nao.loop_start() #start the loop
     
-    for i in range(30) :
-        naofile = open("nao.txt",'r')
-        naocontent = naofile.read()
-        time.sleep(1)
-        if (naocontent == "DONE" ) :
-            print ("Nao Finished Talking")
-            break
-    nao.loop_stop() #stop the loop
+    if (speakWithNao == True) :
+        for i in range(30) :
+            naofile = open("nao.txt",'r')
+            naocontent = naofile.read()
+            time.sleep(1)
+            if (naocontent == "DONE" ) :
+                print ("Nao Finished Talking")
+                break
+        nao.loop_stop() #stop the loop
+
 
 
