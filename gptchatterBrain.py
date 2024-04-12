@@ -399,4 +399,4 @@ while True:
     print("ROBOT:", completion.choices[0].message.content)  # Corrected line
     
     # Add model's response to the messages list to maintain context
-    messages.append({"role": "assistant", "content": completion.choices[0].message.content})  # Corrected line
+    messages.append({"role": "assistant", "content": completion.choices[0].message.content})  # Corrected line                           
