@@ -41,9 +41,9 @@ messageEnded = True
 # Initialiseer Pygame voor audio afspelen
 pygame.mixer.init()
 
-chatViaMic = True
+chatViaMic = False
 
-
+ 
 def get_audio_length(file_path):
     audio = AudioSegment.from_mp3(file_path)
     return len(audio)  # De lengte van het audiobestand in seconden
@@ -157,7 +157,7 @@ def rms(frame):
     return np.sqrt(np.mean(np.square(frame), axis=0))
 
 
-def record_until_silence(threshold=0.015, fs=44100, chunk_size=1024, max_silence=5):
+def record_until_silence(threshold=0.015, fs=44100, chunk_size=1024, max_silence=500):
     """
     Neemt audio op zolang er geluid is boven een bepaalde drempelwaarde en stopt na een bepaalde periode van stilte.
     :param threshold: De drempelwaarde voor het volume om te stoppen met opnemen.
@@ -178,12 +178,15 @@ def record_until_silence(threshold=0.015, fs=44100, chunk_size=1024, max_silence
         if volume_norm < threshold:
             silent_frames += 1
             if silent_frames > silence_limit:
-                raise sd.CallbackStop
+                print ("silence limit")
+                #raise sd.CallbackStop
         else:
             silent_frames = 0
             recording_started =  True
-        recorded_frames.append(indata.copy())                       
-        if keyboard.is_pressed('space'):
+        recorded_frames.append(indata.copy())                                
+        if keyboard.is_pressed('space') == False:      
+            print ("ended by spacebar")
+            raise sd.CallbackStop
             return(True)  
 
 
@@ -202,7 +205,7 @@ def record_until_silence(threshold=0.015, fs=44100, chunk_size=1024, max_silence
         recording = np.concatenate(recorded_frames, axis=0)
         # Tijdelijk bestand aanmaken en opname opslaan
         temp_file = tempfile.mktemp(prefix='opgenomen_audio_', suffix='.wav')
-        write(temp_file, fs, recording)  # Schrijf de opname naar een WAV-bestand
+        write(temp_file, fs, recording)  # Schrijf de opname                                                                                                                                                                          naar een WAV-bestand
 
         #print(f"Audio opgenomen en opgeslagen in: {temp_file}")
         return temp_file
@@ -221,7 +224,7 @@ with open('contextBrain.txt', 'r') as file:
 
 initial_messages = [
     {"role": "system", "content": inhoud},
-]
+]                                                                                           
 
 # Initialize messages list with the initial system message
 messages = initial_messages.copy()
@@ -239,13 +242,12 @@ while True:
         if (chatViaMic == False) :
             user_input = input("Your message: ")
         else :
-            print("Druk op de spatiebalk om te beginnen met opnemen.")
+            print("Druk op de spatiebalk om te beginnen met een vraag te stellen, laat deze opnieuw los wanneer je je vraag hebt gesteld.")
             while (True) :
                 if keyboard.is_pressed('space'):
                     break   
 
             audio_file_path = record_until_silence()
-            
             
             if (audio_file_path == 0) :
                 continue

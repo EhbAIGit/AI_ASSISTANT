@@ -72,7 +72,7 @@ pygame.mixer.init()
 nao.subscribe('NAO/DONE')
 
 chatViaMic = True
-speakWithNao = False
+speakWithNao = True
 
 # Functie om de WAV af te spelen
 def play_audio(file_path):
