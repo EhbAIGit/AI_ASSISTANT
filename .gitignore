@@ -2,3 +2,11 @@
 *.mp3
 contextBrain.txt
 contextBrain.txt
+google/credentials.json
+/google/uploads
+token.json
+google/tokenCalendar.json
+google/tokenCalendarSpecific.json
+google/tokenDocs.json
+google/tokenMails.json
+google/lastmail.txt

@@ -1,0 +1,20 @@
+
+Following tutorial has been used to setup google console apps and API's
+
+https://medium.com/@michaelev3/connecting-custom-gpts-to-google-apis-726dc2cdb54d
+
+
+I'm also using ngrok to expose the appVoice.py  (Flask website) to a https tunnel.
+
+for this you need a ngrok account.  After you have the account, just download the ngrok app and run following in a commandline :
+
+ngrok http --domain=positive-worm-enormous.ngrok-free.app 5000
+
+Of if you want to secure it with oAuth
+
+ngrok http http://localhost:5000 --oauth=google --oauth-allow-email=maarten.dequanter@gmail.com --domain=positive-worm-enormous.ngrok-free.app
+
+
+Or via a username:
+
+ngrok http http://localhost:5000 --basic-auth 'ailabo:geheim123$' --domain=positive-worm-enormous.ngrok-free.app

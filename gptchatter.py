@@ -106,6 +106,9 @@ while True:
 
     if user_input.lower() == 'exit':
         print("Exiting chat...")
+        naofile = open("contextHistory.txt",'w')
+        naofile.write(messages)
+        naofile.close()        
         break
     
     # Define the words to test for
@@ -130,7 +133,7 @@ while True:
     
     # Generate a response from the model
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4-turbo",
         messages=messages
     )
 
@@ -149,8 +152,8 @@ while True:
 
     speech_file_path = 'speech' + str(string)+ ".mp3"
     response = client.audio.speech.create(
-    model="tts-1-hd",
-    voice="nova",
+    model="tts-1",
+    voice="onyx",
     input=completion.choices[0].message.content
     )
 

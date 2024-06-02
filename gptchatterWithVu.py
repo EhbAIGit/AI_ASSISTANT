@@ -77,7 +77,8 @@ client = OpenAI()
 # Initial system message to set the context for the chat
 
 # Open het tekstbestand in leesmodus ('r')
-with open('context.txt', 'r') as file:
+with open('filters.txt', 'r') as file:
+    print ("Filters gelezen")
     # Lees de inhoud van het bestand en sla het op in een string
     inhoud = file.read()
 
@@ -138,7 +139,7 @@ while True:
     
     # Generate a response from the model
     completion = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=messages
     )
 
